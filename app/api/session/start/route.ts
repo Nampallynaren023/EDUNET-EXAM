@@ -26,10 +26,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Session not found.' }, { status: 404 });
     }
 
+    if (session.status === 'started') {
+      return NextResponse.json({ success: true, totalQuestions: 50, message: 'Exam in progress.' });
+    }
+
     if (session.status !== 'registered') {
-      if (session.status === 'started') {
-        return NextResponse.json({ error: 'Exam already started.' }, { status: 409 });
-      }
       return NextResponse.json(
         { error: `Cannot start exam. Current status: ${session.status}.` },
         { status: 409 }

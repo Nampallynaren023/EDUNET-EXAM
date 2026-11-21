@@ -43,7 +43,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Session not found.' }, { status: 404 });
     }
 
-    if (session.status !== 'started') {
+    if (session.status === 'registered') {
+      // Auto-transition to started so mobile network race conditions don't block question 0
+      await supabaseAdmin
+        .from('exam_sessions')
+        .update({ status: 'started', started_at: new Date().toISOString() })
+        .eq('id', sessionId);
+      session.status = 'started';
+    } else if (session.status !== 'started') {
       return NextResponse.json(
         { error: `Exam is not in progress. Current status: ${session.status}.` },
         { status: 403 }

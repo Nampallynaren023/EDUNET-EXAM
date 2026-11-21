@@ -22,7 +22,7 @@ const QUESTION_TIME = 26; // Exactly 26 seconds per question
 export default function ExamPage() {
   const router = useRouter();
   const params = useParams();
-  const sessionId = params.sessionId as string;
+  const sessionId = ((params.sessionId as string) || '').trim();
 
   const [question, setQuestion] = useState<QuestionData | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -41,9 +41,13 @@ export default function ExamPage() {
   const selectedAnswerRef = useRef<string | null>(null);
   const questionRef = useRef<QuestionData | null>(null);
   const currentIndexRef = useRef(0);
+  const allAnswersRef = useRef<Record<number, string | null>>({});
 
   useEffect(() => {
     selectedAnswerRef.current = selectedAnswer;
+    if (questionRef.current && selectedAnswer !== null) {
+      allAnswersRef.current[questionRef.current.questionIndex] = selectedAnswer;
+    }
   }, [selectedAnswer]);
 
   useEffect(() => {
@@ -61,6 +65,7 @@ export default function ExamPage() {
     if (timerRef.current) clearInterval(timerRef.current);
     try {
       if (selectedAnswerRef.current !== null && questionRef.current) {
+        allAnswersRef.current[questionRef.current.questionIndex] = selectedAnswerRef.current;
         await fetch('/api/session/answer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -69,12 +74,15 @@ export default function ExamPage() {
             questionIndex: questionRef.current.questionIndex,
             selectedAnswer: selectedAnswerRef.current,
           }),
-        });
+        }).catch(() => {});
       }
       await fetch('/api/session/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({
+          sessionId,
+          answers: allAnswersRef.current,
+        }),
       });
       router.push(`/result/${sessionId}`);
     } catch {
@@ -129,6 +137,7 @@ export default function ExamPage() {
     const curIdx = currentIndexRef.current;
 
     if (curQ) {
+      allAnswersRef.current[curQ.questionIndex] = curAns;
       try {
         await fetch('/api/session/answer', {
           method: 'POST',

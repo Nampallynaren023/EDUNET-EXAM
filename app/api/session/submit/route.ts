@@ -51,13 +51,24 @@ export async function POST(request: Request) {
       .eq('session_id', sessionId);
 
     if (ansError) {
-      return NextResponse.json({ error: 'Failed to fetch answers.' }, { status: 500 });
+      console.warn('Could not fetch student_answers, falling back to payload answers:', ansError);
     }
 
     const answerMap: Record<number, string | null> = {};
     (answers ?? []).forEach((a: any) => {
       answerMap[a.question_index] = a.selected_answer;
     });
+
+    // Merge client-submitted answers to guard against mobile dropped connections
+    const clientAnswers = (body.answers && typeof body.answers === 'object') ? body.answers : {};
+    for (const [idxStr, ans] of Object.entries(clientAnswers)) {
+      const qIdx = parseInt(idxStr, 10);
+      if (!isNaN(qIdx) && (answerMap[qIdx] === undefined || answerMap[qIdx] === null)) {
+        if (ans !== null && ans !== undefined) {
+          answerMap[qIdx] = String(ans);
+        }
+      }
+    }
 
     let correct = 0, incorrect = 0, unanswered = 0;
     (assigned ?? []).forEach((q: any) => {

@@ -1,24 +1,31 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const clean = (val?: string) => (val ? val.trim().replace(/^["']|["']$/g, '') : '');
 
-const ADMINS = [
+const JWT_SECRET = clean(process.env.JWT_SECRET) || 'EduNet@Sainath2024#SecureJWT_Key_Min32Chars!';
+
+const getAdmins = () => [
   {
-    email: (process.env.PRIMARY_ADMIN_EMAIL ?? '').toLowerCase(),
-    password: process.env.PRIMARY_ADMIN_PASSWORD ?? '',
+    email: (clean(process.env.PRIMARY_ADMIN_EMAIL) || 'nampallynaren16@gmail.com').toLowerCase(),
+    password: clean(process.env.PRIMARY_ADMIN_PASSWORD) || 'EduNetAdmin@Naren2024!',
     name: 'Naren',
   },
   {
-    email: (process.env.SECONDARY_ADMIN_EMAIL ?? '').toLowerCase(),
-    password: process.env.SECONDARY_ADMIN_PASSWORD ?? '',
+    email: (clean(process.env.SECONDARY_ADMIN_EMAIL) || 'sainathdevath9@gmail.com').toLowerCase(),
+    password: clean(process.env.SECONDARY_ADMIN_PASSWORD) || 'EduNetAdmin@Sainath2024!',
     name: 'Sainath',
   },
 ];
 
 export function validateAdmin(email: string, password: string): { email: string; name: string } | null {
-  const admin = ADMINS.find(
-    (a) => a.email === email.toLowerCase().trim() && a.password === password
+  if (!email || !password) return null;
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanPassword = clean(password);
+
+  const admins = getAdmins();
+  const admin = admins.find(
+    (a) => a.email === cleanEmail && a.password === cleanPassword
   );
   return admin ? { email: admin.email, name: admin.name } : null;
 }

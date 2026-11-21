@@ -4,10 +4,16 @@ import path from 'path';
 import os from 'os';
 
 // Server-side only Supabase client with local file fallback
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const cleanEnv = (v?: string) => (v ? v.trim().replace(/^["']|["']$/g, '') : '');
+const supabaseUrl = cleanEnv(process.env.SUPABASE_URL);
+const supabaseServiceKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-const isMock = !supabaseUrl || supabaseUrl.includes('YOUR_PROJECT_REF') || supabaseUrl.includes('placeholder');
+const isMock =
+  !supabaseUrl ||
+  supabaseUrl.includes('YOUR_PROJECT_REF') ||
+  supabaseUrl.includes('placeholder') ||
+  !supabaseServiceKey ||
+  supabaseServiceKey.includes('your_service_role_key');
 
 // Real client (if configured)
 const realClient = !isMock
