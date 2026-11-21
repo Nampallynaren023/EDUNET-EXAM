@@ -1,0 +1,20 @@
+-- ============================================================
+-- EduNet Seed: Default Admin Bootstrap
+-- ============================================================
+-- NOTE: This application uses environment variables for the
+-- initial admin login rather than a database user record.
+-- Set the following in your .env.local / Vercel dashboard:
+--   ADMIN_USERNAME=sainath
+--   ADMIN_PASSWORD=EduNet@2024
+--
+-- If you later migrate to database-backed admin accounts you
+-- can generate a bcrypt hash at the Node.js REPL:
+--   node -e "const b=require('bcryptjs');b.hash('EduNet@2024',10).then(console.log)"
+-- Then insert:
+--   INSERT INTO admin_users (username, password_hash)
+--   VALUES ('sainath', '<generated_hash>')
+--   ON CONFLICT (username) DO NOTHING;
+-- ============================================================
+
+-- Seed sample data for local development (optional)
+-- Remove before production deployment.
