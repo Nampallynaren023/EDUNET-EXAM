@@ -133,6 +133,57 @@ export default function ResultPage() {
           <div className="glass-card p-4 mb-6">
             <p className="text-gray-400 text-sm">📋 Your results have been recorded. The administrator will share detailed feedback.</p>
           </div>
+
+          {/* Creators Appreciation Card */}
+          <div className="glass-card p-6 md:p-8 text-center border border-cyan-500/20 relative overflow-hidden mb-6" style={{ background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)' }}>
+            <div className="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-xl">⚡</span>
+              <span className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Crafted with Excellence</span>
+              <span className="text-xl">🚀</span>
+            </div>
+
+            <h3 className="text-lg md:text-xl font-bold text-white mb-2 tracking-wide">
+              Heartfelt Thanks to the Creators
+            </h3>
+
+            <p className="text-gray-400 text-xs md:text-sm max-w-md mx-auto mb-5 leading-relaxed">
+              This intelligent examination platform was ideated, engineered, and brought to life with dedication by:
+            </p>
+
+            {/* Creator Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {[
+                { name: 'NAREN', role: 'Architect & Lead Dev', icon: '💻', gradient: 'from-cyan-400 to-blue-500' },
+                { name: 'UDAY', role: 'Core Engineer & UI/UX', icon: '🎨', gradient: 'from-purple-400 to-pink-500' },
+                { name: 'VARSHITH', role: 'Systems & QA Specialist', icon: '⚙️', gradient: 'from-amber-400 to-orange-500' },
+              ].map((creator) => (
+                <div
+                  key={creator.name}
+                  className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md hover:border-cyan-400/40 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-0.5"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-lg">{creator.icon}</span>
+                    <div className="text-left">
+                      <div className={`font-black tracking-wider text-sm bg-gradient-to-r ${creator.gradient} bg-clip-text text-transparent`}>
+                        {creator.name}
+                      </div>
+                      <div className="text-[10px] text-gray-400 font-medium tracking-tight">
+                        {creator.role}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-5 text-[11px] text-gray-500 italic">
+              &ldquo;Empowering students through modern, fair, and high-performance skill assessment.&rdquo;
+            </p>
+          </div>
+
           <p className="text-gray-600 text-xs">
             EduNet – Soft Skills Department · Conducted by Mr. Sainath
           </p>

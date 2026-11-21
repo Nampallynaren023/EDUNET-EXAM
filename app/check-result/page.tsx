@@ -192,6 +192,37 @@ export default function CheckResultPage() {
                   🖨️ Print / Save Result
                 </button>
               </div>
+
+              {/* Creators Tribute */}
+              <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-sm">⚡</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-cyan-400">Created & Built By</span>
+                  <span className="text-sm">🚀</span>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-3">
+                  {[
+                    { name: 'NAREN', role: 'Architect & Lead Dev', icon: '💻', gradient: 'from-cyan-400 to-blue-500' },
+                    { name: 'UDAY', role: 'Core Engineer & UI/UX', icon: '🎨', gradient: 'from-purple-400 to-pink-500' },
+                    { name: 'VARSHITH', role: 'Systems & QA Specialist', icon: '⚙️', gradient: 'from-amber-400 to-orange-500' },
+                  ].map((creator) => (
+                    <div
+                      key={creator.name}
+                      className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-left flex items-center gap-2"
+                    >
+                      <span className="text-xs">{creator.icon}</span>
+                      <div>
+                        <div className={`font-bold text-xs bg-gradient-to-r ${creator.gradient} bg-clip-text text-transparent`}>
+                          {creator.name}
+                        </div>
+                        <div className="text-[9px] text-gray-400">
+                          {creator.role}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           );
         })()}
