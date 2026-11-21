@@ -36,7 +36,9 @@ git push -u origin main
 1. Go to [https://vercel.com](https://vercel.com) and log in with your GitHub account.
 2. Click **Add New...** > **Project**.
 3. Select your `edunet-exam` repository and click **Import**.
-4. In the **Environment Variables** section, add the following 7 variables:
+4. **Framework Preset:** Vercel will auto-detect **Next.js**. Leave as-is.
+5. **Build Command:** Leave as default (`npm run build`) — it will automatically use webpack mode.
+6. In the **Environment Variables** section, add the following 8 variables:
 
 | Key | Value |
 |---|---|
@@ -47,8 +49,9 @@ git push -u origin main
 | `PRIMARY_ADMIN_PASSWORD` | `EduNetAdmin@Naren2024!` |
 | `SECONDARY_ADMIN_EMAIL` | `sainathdevath9@gmail.com` |
 | `SECONDARY_ADMIN_PASSWORD` | `EduNetAdmin@Sainath2024!` |
+| `NEXT_PUBLIC_APP_URL` | *Your Vercel URL after first deploy (e.g. `https://edunet-exam.vercel.app`)* |
 
-5. Click **Deploy**.
+7. Click **Deploy**.
 6. Within 1 minute, Vercel will give you a live production link (e.g. `https://edunet-exam.vercel.app`).
 
 ---
