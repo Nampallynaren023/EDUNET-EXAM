@@ -24,6 +24,15 @@ const realClient = !isMock
 
 // Determine writable directory for mock database
 function getDbFilePath(): string {
+  if (process.env.VERCEL) {
+    const tmpData = path.join(os.tmpdir(), 'edunet-data');
+    try {
+      if (!fs.existsSync(tmpData)) {
+        fs.mkdirSync(tmpData, { recursive: true });
+      }
+    } catch {}
+    return path.join(tmpData, 'local-db.json');
+  }
   try {
     const cwdData = path.join(process.cwd(), '.data');
     if (!fs.existsSync(cwdData)) {
@@ -32,9 +41,11 @@ function getDbFilePath(): string {
     return path.join(cwdData, 'local-db.json');
   } catch {
     const tmpData = path.join(os.tmpdir(), 'edunet-data');
-    if (!fs.existsSync(tmpData)) {
-      fs.mkdirSync(tmpData, { recursive: true });
-    }
+    try {
+      if (!fs.existsSync(tmpData)) {
+        fs.mkdirSync(tmpData, { recursive: true });
+      }
+    } catch {}
     return path.join(tmpData, 'local-db.json');
   }
 }
