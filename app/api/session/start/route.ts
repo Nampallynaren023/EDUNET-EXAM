@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     // Validate session exists
     const { data: session, error: sessionError } = await supabaseAdmin
       .from('exam_sessions')
-      .select('id, status')
+      .select('id, status, current_question_index')
       .eq('id', sessionId)
       .maybeSingle();
 
@@ -26,8 +26,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Session not found.' }, { status: 404 });
     }
 
+    if (session.status === 'submitted') {
+      return NextResponse.json({
+        success: true,
+        alreadySubmitted: true,
+        status: 'submitted',
+        message: 'Exam already submitted.',
+      });
+    }
+
     if (session.status === 'started') {
-      return NextResponse.json({ success: true, totalQuestions: 50, message: 'Exam in progress.' });
+      return NextResponse.json({
+        success: true,
+        totalQuestions: 50,
+        currentQuestionIndex: session.current_question_index ?? 0,
+        message: 'Exam in progress.',
+      });
     }
 
     if (session.status !== 'registered') {
@@ -48,7 +62,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to start session.' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, totalQuestions: 50 });
+    return NextResponse.json({
+      success: true,
+      totalQuestions: 50,
+      currentQuestionIndex: session.current_question_index ?? 0,
+    });
   } catch (err) {
     console.error('Session start error:', err);
     return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });

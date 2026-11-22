@@ -43,7 +43,10 @@ export default function ResultPage() {
           body: JSON.stringify({ sessionId }),
         });
         const data = await res.json();
-        const studentName = localStorage.getItem('edunet_student') || '';
+        let studentName = '';
+        try {
+          studentName = localStorage.getItem('edunet_student') || sessionStorage.getItem('edunet_student') || '';
+        } catch {}
         setResult({
           score: data.score ?? 0,
           correct: data.correct ?? 0,

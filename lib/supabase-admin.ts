@@ -40,6 +40,9 @@ function getDbFilePath(): string {
 }
 
 let inMemoryCache: LocalDB | null = null;
+let saveTimer: NodeJS.Timeout | null = null;
+let isSaving = false;
+let pendingSave = false;
 
 interface LocalDB {
   students: any[];
@@ -55,30 +58,72 @@ function loadDB(): LocalDB {
     const file = getDbFilePath();
     if (fs.existsSync(file)) {
       const content = fs.readFileSync(file, 'utf-8');
-      inMemoryCache = JSON.parse(content);
-      return inMemoryCache!;
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object') {
+        inMemoryCache = {
+          students: Array.isArray(parsed.students) ? parsed.students : [],
+          exam_sessions: Array.isArray(parsed.exam_sessions) ? parsed.exam_sessions : [],
+          assigned_questions: Array.isArray(parsed.assigned_questions) ? parsed.assigned_questions : [],
+          student_answers: Array.isArray(parsed.student_answers) ? parsed.student_answers : [],
+          app_settings: parsed.app_settings && typeof parsed.app_settings === 'object' ? parsed.app_settings : { exam_enabled: 'true' },
+        };
+        return inMemoryCache;
+      }
     }
   } catch (e) {
     console.warn('Fallback to in-memory store:', e);
   }
-  inMemoryCache = {
-    students: [],
-    exam_sessions: [],
-    assigned_questions: [],
-    student_answers: [],
-    app_settings: { exam_enabled: 'true' },
-  };
+  if (!inMemoryCache) {
+    inMemoryCache = {
+      students: [],
+      exam_sessions: [],
+      assigned_questions: [],
+      student_answers: [],
+      app_settings: { exam_enabled: 'true' },
+    };
+  }
   return inMemoryCache;
+}
+
+function flushDBToDisk() {
+  if (!inMemoryCache) return;
+  if (isSaving) {
+    pendingSave = true;
+    return;
+  }
+  isSaving = true;
+  pendingSave = false;
+  try {
+    const file = getDbFilePath();
+    const tmpFile = file + '.' + Date.now() + '.tmp';
+    const data = JSON.stringify(inMemoryCache, null, 2);
+    fs.writeFileSync(tmpFile, data, 'utf-8');
+    try {
+      if (fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
+      fs.renameSync(tmpFile, file);
+    } catch {
+      // Fallback for systems that allow direct overwrite
+      fs.writeFileSync(file, data, 'utf-8');
+      if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+    }
+  } catch (e) {
+    // Non-fatal, in-memory cache remains 100% active and consistent
+  } finally {
+    isSaving = false;
+    if (pendingSave) {
+      setTimeout(flushDBToDisk, 50);
+    }
+  }
 }
 
 function saveDB(db: LocalDB) {
   inMemoryCache = db;
-  try {
-    const file = getDbFilePath();
-    fs.writeFileSync(file, JSON.stringify(db, null, 2), 'utf-8');
-  } catch (e) {
-    // In serverless read-only environment, keep in memory
-  }
+  // High-performance coalesced disk write:
+  // In-memory data is updated synchronously in 0ms; disk is synced in background
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushDBToDisk, 100);
 }
 
 function createMockClient() {

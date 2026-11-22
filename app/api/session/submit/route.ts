@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       });
     }
 
-    if (session.status !== 'started') {
+    if (session.status !== 'started' && session.status !== 'registered') {
       return NextResponse.json({ error: `Cannot submit. Status: ${session.status}` }, { status: 409 });
     }
 

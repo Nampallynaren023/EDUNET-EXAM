@@ -46,8 +46,16 @@ export default function RegisterPage() {
         setLoading(false);
         return;
       }
-      localStorage.setItem('edunet_session', data.sessionId);
-      localStorage.setItem('edunet_student', data.studentName);
+      try {
+        localStorage.setItem('edunet_session', data.sessionId);
+        localStorage.setItem('edunet_student', data.studentName);
+        sessionStorage.setItem('edunet_session', data.sessionId);
+        sessionStorage.setItem('edunet_student', data.studentName);
+      } catch {}
+      // Set client-accessible fallback cookie
+      try {
+        document.cookie = `edunet_session_id=${data.sessionId}; path=/; max-age=28800; SameSite=Lax`;
+      } catch {}
       router.push(`/exam/${data.sessionId}`);
     } catch {
       setError('Network error. Please check your connection and try again.');

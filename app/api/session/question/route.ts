@@ -50,6 +50,11 @@ export async function GET(request: NextRequest) {
         .update({ status: 'started', started_at: new Date().toISOString() })
         .eq('id', sessionId);
       session.status = 'started';
+    } else if (session.status === 'submitted') {
+      return NextResponse.json(
+        { error: 'Exam already submitted.', status: 'submitted' },
+        { status: 403 }
+      );
     } else if (session.status !== 'started') {
       return NextResponse.json(
         { error: `Exam is not in progress. Current status: ${session.status}.` },
@@ -74,6 +79,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Question not found.' }, { status: 404 });
     }
 
+    // Fetch any previously saved answer for this question
+    const { data: savedAns } = await supabaseAdmin
+      .from('student_answers')
+      .select('selected_answer')
+      .eq('session_id', sessionId)
+      .eq('question_index', index)
+      .maybeSingle();
+
     // Extract student info (Supabase join returns nested object or array)
     const rawStudent = session.students as unknown;
     const studentData = (Array.isArray(rawStudent) ? rawStudent[0] : rawStudent) as { full_name: string; roll_number: string } | null;
@@ -87,9 +100,10 @@ export async function GET(request: NextRequest) {
       questionId: question.question_id,
       questionText: question.question_text,
       options: question.options,
+      savedAnswer: savedAns?.selected_answer ?? null,
       studentName: studentData?.full_name ?? '',
       rollNumber: studentData?.roll_number ?? '',
-      currentQuestionIndex: session.current_question_index,
+      currentQuestionIndex: session.current_question_index ?? index,
     });
   } catch (err) {
     console.error('Question route error:', err);

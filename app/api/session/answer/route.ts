@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     // Validate session
     const { data: session, error: sessionError } = await supabaseAdmin
       .from('exam_sessions')
-      .select('id, status')
+      .select('id, status, current_question_index')
       .eq('id', sessionId)
       .maybeSingle();
 
@@ -35,7 +35,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Session not found.' }, { status: 404 });
     }
 
-    if (session.status !== 'started') {
+    if (session.status === 'registered') {
+      session.status = 'started';
+      await supabaseAdmin
+        .from('exam_sessions')
+        .update({ status: 'started', started_at: new Date().toISOString() })
+        .eq('id', sessionId);
+    } else if (session.status !== 'started') {
       return NextResponse.json(
         { error: `Exam is not in progress. Current status: ${session.status}.` },
         { status: 403 }
@@ -59,8 +65,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save answer.' }, { status: 500 });
     }
 
-    // Advance current_question_index
-    const nextIndex = index + 1;
+    // Advance current_question_index (never regress progress)
+    const nextIndex = Math.max(session.current_question_index ?? 0, index + 1);
     const { error: updateError } = await supabaseAdmin
       .from('exam_sessions')
       .update({ current_question_index: nextIndex })

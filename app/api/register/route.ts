@@ -47,10 +47,10 @@ export async function POST(request: Request) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanDept = department.trim();
 
-    // Check for duplicate roll number
+    // Check for duplicate roll number / active session resumption
     const { data: existing, error: lookupError } = await supabaseAdmin
       .from('students')
-      .select('id')
+      .select('id, full_name, email')
       .eq('roll_number', cleanRoll)
       .maybeSingle();
 
@@ -60,8 +60,36 @@ export async function POST(request: Request) {
     }
 
     if (existing) {
+      // Check existing session status
+      const { data: existingSession } = await supabaseAdmin
+        .from('exam_sessions')
+        .select('id, status, current_question_index')
+        .eq('student_id', existing.id)
+        .maybeSingle();
+
+      // If session is still in progress, resume safely instead of locking student out!
+      if (existingSession && (existingSession.status === 'started' || existingSession.status === 'registered')) {
+        const resumeRes = NextResponse.json(
+          {
+            sessionId: existingSession.id,
+            studentName: existing.full_name,
+            resumed: true,
+            currentQuestionIndex: existingSession.current_question_index ?? 0,
+            message: 'Resuming your active examination session.',
+          },
+          { status: 200 }
+        );
+        resumeRes.cookies.set('edunet_session_id', existingSession.id, {
+          path: '/',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 8, // 8 hours
+          secure: process.env.NODE_ENV === 'production',
+        });
+        return resumeRes;
+      }
+
       return NextResponse.json(
-        { error: 'Roll number already registered. Each student can attempt the exam only once.' },
+        { error: 'Exam already submitted for this roll number. Check your score on the Check Result page.' },
         { status: 409 }
       );
     }
@@ -128,10 +156,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to assign questions. Please try again.' }, { status: 500 });
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { sessionId: session.id, studentName: student.full_name },
       { status: 201 }
     );
+    response.cookies.set('edunet_session_id', session.id, {
+      path: '/',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 8, // 8 hours
+      secure: process.env.NODE_ENV === 'production',
+    });
+    return response;
   } catch (err) {
     console.error('Register route error:', err);
     return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
