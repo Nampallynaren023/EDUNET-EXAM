@@ -193,34 +193,100 @@ export default function CheckResultPage() {
                 </button>
               </div>
 
-              {/* Creators Tribute */}
-              <div className="mt-8 pt-6 border-t border-white/10 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-sm">⚡</span>
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-cyan-400">Created & Built By</span>
-                  <span className="text-sm">🚀</span>
+              {/* Creators Tribute - Unique Classic & Attractive Tribute */}
+              <div className="mt-8 pt-6 border-t border-white/10 text-center relative">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-400/40 bg-amber-400/10 mb-2 shadow-[0_0_15px_rgba(251,191,36,0.15)]">
+                  <span className="text-amber-400 text-xs">✦</span>
+                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-amber-300">
+                    Honorary Tribute · The Masterminds
+                  </span>
+                  <span className="text-amber-400 text-xs">✦</span>
                 </div>
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-3">
+
+                <h4 className="text-base md:text-lg font-black text-white tracking-wide mb-1">
+                  Heartfelt Gratitude to the Creators
+                </h4>
+
+                <p className="text-gray-400 text-[11px] max-w-md mx-auto mb-4 leading-relaxed font-light">
+                  Architected, crafted, and engineered with exceptional vision and dedication:
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
                   {[
-                    { name: 'NAREN', role: 'Architect & Lead Dev', icon: '💻', gradient: 'from-cyan-400 to-blue-500' },
-                    { name: 'UDAY', role: 'Core Engineer & UI/UX', icon: '🎨', gradient: 'from-purple-400 to-pink-500' },
-                    { name: 'VARSHITH', role: 'Systems & QA Specialist', icon: '⚙️', gradient: 'from-amber-400 to-orange-500' },
+                    {
+                      name: 'NAREN',
+                      badge: 'Lead Architect',
+                      badgeIcon: '⚡',
+                      role: 'Architect & Lead Dev',
+                      tagline: 'High-Concurrency Engine · Architecture',
+                      border: 'border-cyan-500/30 hover:border-cyan-400/70',
+                      glow: 'hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]',
+                      bgGradient: 'from-cyan-950/40 to-slate-900/60',
+                      crestGradient: 'from-cyan-400 to-blue-600',
+                      textGradient: 'from-cyan-300 via-sky-100 to-blue-400',
+                      pillBg: 'bg-cyan-500/15 border-cyan-400/30 text-cyan-300',
+                      monogram: 'N',
+                    },
+                    {
+                      name: 'UDAY',
+                      badge: 'Creative Director',
+                      badgeIcon: '🎨',
+                      role: 'Core Engineer & UI/UX',
+                      tagline: 'Aesthetic Ergonomics · Kinetic UX',
+                      border: 'border-fuchsia-500/30 hover:border-fuchsia-400/70',
+                      glow: 'hover:shadow-[0_0_20px_rgba(217,70,239,0.2)]',
+                      bgGradient: 'from-fuchsia-950/40 to-slate-900/60',
+                      crestGradient: 'from-fuchsia-400 to-purple-600',
+                      textGradient: 'from-fuchsia-300 via-pink-100 to-purple-400',
+                      pillBg: 'bg-fuchsia-500/15 border-fuchsia-400/30 text-fuchsia-300',
+                      monogram: 'U',
+                    },
+                    {
+                      name: 'VARSHITH',
+                      badge: 'Systems Specialist',
+                      badgeIcon: '⚙️',
+                      role: 'Systems & QA Specialist',
+                      tagline: 'Multi-Device Resilience · Failover Sync',
+                      border: 'border-amber-500/30 hover:border-amber-400/70',
+                      glow: 'hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]',
+                      bgGradient: 'from-amber-950/40 to-slate-900/60',
+                      crestGradient: 'from-amber-400 to-orange-600',
+                      textGradient: 'from-amber-300 via-yellow-100 to-orange-400',
+                      pillBg: 'bg-amber-500/15 border-amber-400/30 text-amber-300',
+                      monogram: 'V',
+                    },
                   ].map((creator) => (
                     <div
                       key={creator.name}
-                      className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-left flex items-center gap-2"
+                      className={`group p-3.5 rounded-xl border ${creator.border} ${creator.glow} bg-gradient-to-b ${creator.bgGradient} backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5`}
                     >
-                      <span className="text-xs">{creator.icon}</span>
-                      <div>
-                        <div className={`font-bold text-xs bg-gradient-to-r ${creator.gradient} bg-clip-text text-transparent`}>
-                          {creator.name}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${creator.crestGradient} p-[1px] shadow-sm`}>
+                          <div className="w-full h-full rounded-[7px] bg-[#0c0d1e] flex items-center justify-center font-black text-white text-xs tracking-wider">
+                            {creator.monogram}
+                          </div>
                         </div>
-                        <div className="text-[9px] text-gray-400">
-                          {creator.role}
-                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold border ${creator.pillBg}`}>
+                          <span>{creator.badgeIcon}</span>
+                          <span>{creator.badge}</span>
+                        </span>
                       </div>
+                      <div className={`font-black text-sm tracking-[0.2em] uppercase bg-gradient-to-r ${creator.textGradient} bg-clip-text text-transparent mb-0.5`}>
+                        {creator.name}
+                      </div>
+                      <div className="text-[11px] font-medium text-gray-200 tracking-wide mb-1">
+                        {creator.role}
+                      </div>
+                      <p className="text-[10px] text-gray-400 leading-snug line-clamp-1">
+                        {creator.tagline}
+                      </p>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-center gap-2 text-[10px] text-amber-300/80 tracking-wider">
+                  <span>💎</span>
+                  <span>CRAFTED WITH PRECISION & INTEGRITY</span>
                 </div>
               </div>
             </div>
