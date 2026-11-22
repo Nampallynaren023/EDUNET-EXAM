@@ -254,6 +254,15 @@ function createMockClient() {
           const db = loadDB();
           const list: any[] = (db as any)[tableName] || [];
           let filtered = list.filter((item) => filters.every((fn) => fn(item)));
+          if (orderByField) {
+            filtered.sort((a, b) => {
+              const valA = a[orderByField!] ?? '';
+              const valB = b[orderByField!] ?? '';
+              if (valA < valB) return orderAsc ? -1 : 1;
+              if (valA > valB) return orderAsc ? 1 : -1;
+              return 0;
+            });
+          }
           if (tableName === 'exam_sessions') {
             filtered = filtered.map((row) => {
               const student = db.students.find((s) => s.id === row.student_id);

@@ -27,18 +27,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No student found with this Roll Number.' }, { status: 404 });
     }
 
-    // Find their exam session
+    // Find their submitted exam session
     const { data: session, error: sessionError } = await supabaseAdmin
       .from('exam_sessions')
       .select('id, status, score, correct_count, incorrect_count, unanswered_count, submitted_at')
       .eq('student_id', student.id)
+      .eq('status', 'submitted')
       .maybeSingle();
 
     if (sessionError) {
       return NextResponse.json({ error: 'Database error.' }, { status: 500 });
     }
 
-    if (!session || session.status !== 'submitted') {
+    if (!session) {
       return NextResponse.json(
         { error: 'Examination has not been submitted yet for this Roll Number.' },
         { status: 404 }
