@@ -88,6 +88,25 @@ export default function ExamPage() {
   const isAdvancingRef = useRef(false);
   const hiddenStartTimeRef = useRef<number | null>(null);
   const pendingAnswerQueue = useRef<Array<{ index: number; answer: string | null }>>([]);
+  const questionsCacheRef = useRef<Record<number, QuestionData>>({});
+
+  // Background preload all 50 questions for instant 0ms transitions
+  const preloadAllQuestions = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetchWithRetry(`/api/session/question?sessionId=${sessionId}&index=all`, {}, 2);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.questions)) {
+          data.questions.forEach((q: QuestionData) => {
+            questionsCacheRef.current[q.questionIndex] = q;
+          });
+        }
+      }
+    } catch {
+      // Non-fatal, single-question fallback remains active
+    }
+  }, [sessionId]);
 
   // Load cached answers from safe storage on startup
   useEffect(() => {
@@ -195,6 +214,23 @@ export default function ExamPage() {
 
   // Fetch question with retry and resume support
   const fetchQuestion = useCallback(async (index: number) => {
+    // If question is already in memory cache, display it instantly with 0ms delay!
+    const cachedQ = questionsCacheRef.current[index];
+    if (cachedQ) {
+      setQuestion(cachedQ);
+      setCurrentIndex(index);
+      currentIndexRef.current = index;
+      safeStorage.set(`edunet_last_q_${sessionId}`, String(index));
+      const existingAnswer = allAnswersRef.current[index] !== undefined ? allAnswersRef.current[index] : (cachedQ.savedAnswer ?? null);
+      setSelectedAnswer(existingAnswer);
+      selectedAnswerRef.current = existingAnswer;
+      questionEndTimeRef.current = Date.now() + QUESTION_TIME * 1000;
+      setTimeLeft(QUESTION_TIME);
+      setLoading(false);
+      isAdvancingRef.current = false;
+      return;
+    }
+
     setLoading(true);
     setError('');
     isAdvancingRef.current = false;
@@ -225,8 +261,10 @@ export default function ExamPage() {
       }
 
       const data: QuestionData = await res.json();
+      questionsCacheRef.current[index] = data; // Cache in memory
       setQuestion(data);
       setCurrentIndex(index);
+      currentIndexRef.current = index;
       safeStorage.set(`edunet_last_q_${sessionId}`, String(index));
 
       // Prefer local cached answer, fallback to server savedAnswer
@@ -248,7 +286,7 @@ export default function ExamPage() {
     setLoading(false);
   }, [sessionId, router]);
 
-  // Advance to Next Question
+  // Advance to Next Question - Instant 0ms transition with background sync
   const handleNext = useCallback(async () => {
     if (isAdvancingRef.current) return;
     isAdvancingRef.current = true;
@@ -261,7 +299,7 @@ export default function ExamPage() {
       allAnswersRef.current[curQ.questionIndex] = curAns;
       safeStorage.set(`edunet_ans_${sessionId}`, JSON.stringify(allAnswersRef.current));
 
-      // Attempt background save to backend
+      // Asynchronous non-blocking background save to backend
       fetch('/api/session/answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -279,14 +317,38 @@ export default function ExamPage() {
     const nextIndex = curIdx + 1;
     if (nextIndex >= 50) {
       await submitExam();
-    } else {
-      await fetchQuestion(nextIndex);
+      return;
     }
+
+    // Instant 0ms switch if already preloaded
+    const nextCached = questionsCacheRef.current[nextIndex];
+    if (nextCached) {
+      setQuestion(nextCached);
+      setCurrentIndex(nextIndex);
+      currentIndexRef.current = nextIndex;
+      safeStorage.set(`edunet_last_q_${sessionId}`, String(nextIndex));
+
+      const existingAns = allAnswersRef.current[nextIndex] !== undefined ? allAnswersRef.current[nextIndex] : (nextCached.savedAnswer ?? null);
+      setSelectedAnswer(existingAns);
+      selectedAnswerRef.current = existingAns;
+
+      // Reset wall-clock timer for exactly 26 seconds
+      questionEndTimeRef.current = Date.now() + QUESTION_TIME * 1000;
+      setTimeLeft(QUESTION_TIME);
+      isAdvancingRef.current = false;
+      return;
+    }
+
+    // Fallback if network batch preload was still in-flight
+    await fetchQuestion(nextIndex);
   }, [sessionId, submitExam, fetchQuestion]);
 
   // Start exam session & resume last question
   const startExamAndResume = useCallback(async () => {
     try {
+      // Trigger background preload of all 50 questions immediately
+      preloadAllQuestions();
+
       const res = await fetchWithRetry('/api/session/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -313,7 +375,7 @@ export default function ExamPage() {
       setExamStarted(true);
       await fetchQuestion(0);
     }
-  }, [sessionId, router, fetchQuestion]);
+  }, [sessionId, router, fetchQuestion, preloadAllQuestions]);
 
   // Initialize
   useEffect(() => {

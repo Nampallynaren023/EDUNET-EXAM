@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { getMemePerformance } from '@/lib/performance';
 
 interface ResultData {
   score: number;
@@ -10,16 +11,6 @@ interface ResultData {
   unanswered: number;
   total: number;
   studentName?: string;
-}
-
-function getPerformance(score: number) {
-  if (score >= 45) return { label: 'Outstanding', emoji: '🏆', message: 'Exceptional performance! You are truly exam-ready.', color: '#fbbf24', gradient: 'linear-gradient(135deg, #fbbf24, #f59e0b)' };
-  if (score >= 40) return { label: 'Excellent', emoji: '🌟', message: 'Great work! You have strong professional skills.', color: '#22d3ee', gradient: 'linear-gradient(135deg, #22d3ee, #3b82f6)' };
-  if (score >= 35) return { label: 'Very Good', emoji: '👍', message: "Well done! You're on the right track.", color: '#34d399', gradient: 'linear-gradient(135deg, #34d399, #10b981)' };
-  if (score >= 30) return { label: 'Good', emoji: '😊', message: 'Good effort! Keep building your skills.', color: '#a78bfa', gradient: 'linear-gradient(135deg, #a78bfa, #8b5cf6)' };
-  if (score >= 20) return { label: 'Average', emoji: '📚', message: "You're making progress. Keep practicing!", color: '#60a5fa', gradient: 'linear-gradient(135deg, #60a5fa, #3b82f6)' };
-  if (score >= 10) return { label: 'Below Average', emoji: '💪', message: "Don't give up! Every expert was once a beginner.", color: '#fb923c', gradient: 'linear-gradient(135deg, #fb923c, #f97316)' };
-  return { label: 'Needs Improvement', emoji: '🌱', message: 'This is just the beginning of your journey. Keep going!', color: '#f87171', gradient: 'linear-gradient(135deg, #f87171, #ef4444)' };
 }
 
 export default function ResultPage() {
@@ -69,7 +60,7 @@ export default function ResultPage() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a1a' }}>
         <div className="text-center">
           <div className="text-4xl mb-4 animate-pulse">📊</div>
-          <p className="text-cyan-400">Loading your results...</p>
+          <p className="text-cyan-400 font-medium">Calculating and verifying your exam results...</p>
         </div>
       </div>
     );
@@ -77,64 +68,174 @@ export default function ResultPage() {
 
   if (!result) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a1a' }}>
-        <p className="text-red-400">Unable to load results. Please contact administrator.</p>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#0a0a1a' }}>
+        <div className="text-center">
+          <p className="text-red-400 mb-4 font-semibold">Unable to load examination results.</p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-2.5 rounded-xl text-white text-sm font-semibold bg-cyan-500/20 border border-cyan-500/40 hover:bg-cyan-500/30 transition-all"
+          >
+            ← Return to Home
+          </button>
+        </div>
       </div>
     );
   }
 
-  const perf = getPerformance(result.score);
+  const perf = getMemePerformance(result.score);
   const percentage = ((result.score / 50) * 100).toFixed(1);
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center py-12 px-4" style={{ background: '#0a0a1a' }}>
-      <div className="absolute inset-0 bg-grid opacity-30" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-10 animate-floatSlow" style={{ background: `radial-gradient(circle, ${perf.color}, transparent)` }} />
+      <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-10 animate-floatSlow pointer-events-none" style={{ background: `radial-gradient(circle, ${perf.color}, transparent)` }} />
+
+      {/* 50/50 Special Celebration FX */}
+      {perf.isLegendary && (
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-10 left-1/4 text-3xl animate-bounce">✨</div>
+          <div className="absolute top-24 right-1/4 text-4xl animate-bounce" style={{ animationDelay: '0.2s' }}>🏆</div>
+          <div className="absolute top-1/2 left-10 text-3xl animate-pulse">🌟</div>
+          <div className="absolute top-1/3 right-10 text-3xl animate-pulse" style={{ animationDelay: '0.4s' }}>⚡</div>
+          <div className="absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-amber-500/20 via-transparent to-transparent blur-2xl" />
+        </div>
+      )}
 
       <div className="relative z-10 w-full max-w-2xl">
-        {/* Header */}
+        {/* Navigation / Header */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => router.push('/')}
+            className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm cursor-pointer transition-colors"
+          >
+            ← Home
+          </button>
+          <button
+            onClick={() => router.push('/check-result')}
+            className="text-xs text-gray-400 hover:text-white cursor-pointer transition-colors"
+          >
+            Check Other Results →
+          </button>
+        </div>
+
+        {/* Exam Complete Header */}
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 border border-cyan-500/30" style={{ background: 'rgba(6,182,212,0.1)' }}>
-            <span className="text-cyan-400 text-sm font-medium tracking-widest uppercase">✦ Exam Complete</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3 border border-emerald-500/30 bg-emerald-500/10">
+            <span className="text-emerald-400 text-sm font-semibold tracking-widest uppercase">
+              ✓ Examination Submitted & Graded
+            </span>
           </div>
           {result.studentName && (
-            <p className="text-gray-400 text-lg">Well done, <span className="text-white font-semibold">{result.studentName}</span>!</p>
+            <h2 className="text-2xl md:text-3xl font-black text-white">
+              Official Assessment for <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">{result.studentName}</span>
+            </h2>
           )}
         </div>
 
-        {/* Score Card */}
-        <div className={`glass-card p-8 md:p-10 text-center mb-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '100ms', borderColor: `${perf.color}33` }}>
-          <div className="text-7xl mb-4">{perf.emoji}</div>
-          <div className="text-5xl md:text-7xl font-black mb-2" style={{ background: perf.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+        {/* Immediate Student Score Card */}
+        <div
+          className={`glass-card p-8 md:p-10 text-center mb-6 relative overflow-hidden transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+          style={{
+            borderColor: `${perf.color}50`,
+            boxShadow: `0 0 40px ${perf.color}20`,
+          }}
+        >
+          {/* Legendary Ribbon */}
+          {perf.isLegendary && (
+            <div className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-xs uppercase tracking-widest shadow-lg">
+              <span>👑</span>
+              <span>FLAWLESS RUN · 100% ACCURACY</span>
+              <span>👑</span>
+            </div>
+          )}
+
+          <div className="text-7xl mb-3 animate-success-bounce">{perf.emoji}</div>
+
+          <div
+            className="text-5xl md:text-7xl font-black mb-1 tracking-tight"
+            style={{
+              background: perf.gradient,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
             {result.score}/50
           </div>
-          <div className="text-2xl font-bold mb-2" style={{ color: perf.color }}>{perf.label}</div>
-          <div className="text-gray-400 text-lg mb-4">{percentage}% Score</div>
-          <div className="text-white text-base leading-relaxed px-4 py-3 rounded-xl" style={{ background: `${perf.color}15`, border: `1px solid ${perf.color}30` }}>
-            {perf.message}
+
+          {/* New Meme-Style Category Badge */}
+          <div className="mb-3">
+            <span
+              className="inline-block px-4 py-1.5 rounded-full text-base md:text-lg font-black uppercase tracking-wider shadow-sm"
+              style={{
+                color: perf.color,
+                background: perf.badgeBg,
+                border: `1.5px solid ${perf.badgeBorder}`,
+              }}
+            >
+              {perf.label}
+            </span>
+          </div>
+
+          <div className="text-gray-300 font-semibold text-lg mb-4">
+            {percentage}% Overall Percentage
+          </div>
+
+          {/* Meme Dialogue Card */}
+          <div
+            className="p-4 md:p-5 rounded-2xl relative text-left my-2 border"
+            style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              borderColor: `${perf.color}35`,
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">💬</span>
+              <div>
+                <div className="text-[10px] uppercase font-bold tracking-widest mb-1 text-gray-400">
+                  Assessment Remarks
+                </div>
+                <div className="text-white text-base md:text-lg font-medium italic leading-snug">
+                  &ldquo;{perf.message}&rdquo;
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Detailed Stats Grid */}
         <div className={`grid grid-cols-3 gap-4 mb-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-black text-green-400 mb-1">{result.correct}</div>
-            <div className="text-gray-400 text-xs uppercase tracking-wider">Correct</div>
+          <div className="glass-card p-5 text-center border border-green-500/20 bg-green-500/5">
+            <div className="text-3xl font-black text-green-400 mb-1">{result.correct}</div>
+            <div className="text-gray-300 text-xs font-semibold uppercase tracking-wider">Correct</div>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-black text-red-400 mb-1">{result.incorrect}</div>
-            <div className="text-gray-400 text-xs uppercase tracking-wider">Incorrect</div>
+          <div className="glass-card p-5 text-center border border-red-500/20 bg-red-500/5">
+            <div className="text-3xl font-black text-red-400 mb-1">{result.incorrect}</div>
+            <div className="text-gray-300 text-xs font-semibold uppercase tracking-wider">Incorrect</div>
           </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl font-black text-gray-400 mb-1">{result.unanswered}</div>
-            <div className="text-gray-400 text-xs uppercase tracking-wider">Unanswered</div>
+          <div className="glass-card p-5 text-center border border-white/10 bg-white/5">
+            <div className="text-3xl font-black text-gray-400 mb-1">{result.unanswered}</div>
+            <div className="text-gray-300 text-xs font-semibold uppercase tracking-wider">Unanswered</div>
           </div>
         </div>
 
-        {/* Footer message */}
+        {/* Print / Save Result Action */}
+        <div className="text-center mb-6">
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white border border-white/20 hover:border-cyan-400/60 bg-white/5 hover:bg-white/10 cursor-pointer transition-all shadow-md"
+          >
+            <span>🖨️</span>
+            <span>Print / Save Result Card</span>
+          </button>
+        </div>
+
+        {/* Footer confirmation */}
         <div className={`text-center transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '300ms' }}>
-          <div className="glass-card p-4 mb-6">
-            <p className="text-gray-400 text-sm">📋 Your results have been recorded. The administrator will share detailed feedback.</p>
+          <div className="glass-card p-4 mb-6 border border-emerald-500/20 bg-emerald-500/5">
+            <p className="text-emerald-400 text-xs font-medium">
+              ✅ Your examination has been graded and permanently synchronized with the administrator records.
+            </p>
           </div>
 
           {/* Creators Appreciation Card - Unique Classic & Attractive Tribute */}

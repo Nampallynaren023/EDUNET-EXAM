@@ -50,16 +50,44 @@ export default function LandingPage() {
         }}
       />
 
-      {/* Top right admin link */}
-      <div className="absolute top-6 right-6 z-20">
-        <button
-          onClick={() => router.push('/admin')}
-          className="text-xs text-gray-400 hover:text-cyan-400 px-3 py-1.5 rounded-lg border border-white/10 hover:border-cyan-500/30 transition-all cursor-pointer backdrop-blur-md"
-          style={{ background: 'rgba(255,255,255,0.03)' }}
-        >
-          🔐 Admin Login
-        </button>
-      </div>
+      {/* Top Navigation Bar with Clear Options */}
+      <header className="absolute top-0 left-0 right-0 z-30 px-4 sm:px-8 py-4 flex items-center justify-between border-b border-white/10 backdrop-blur-md" style={{ background: 'rgba(10,10,26,0.7)' }}>
+        <div className="flex items-center gap-3">
+          <span className="text-xl sm:text-2xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            EduNet
+          </span>
+          <span className="text-gray-400 text-xs hidden md:inline border-l border-white/10 pl-3">
+            Soft Skills Assessment Platform
+          </span>
+        </div>
+
+        <nav className="flex items-center gap-1 sm:gap-3">
+          <button
+            onClick={() => router.push('/')}
+            className="text-xs sm:text-sm text-cyan-400 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            🏠 Home
+          </button>
+          <button
+            onClick={() => router.push('/register')}
+            className="text-xs sm:text-sm text-gray-300 hover:text-white font-medium px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            📝 Student Examination
+          </button>
+          <button
+            onClick={() => router.push('/check-result')}
+            className="text-xs sm:text-sm text-gray-300 hover:text-white font-medium px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer hidden sm:inline-block"
+          >
+            🔍 Check Result
+          </button>
+          <button
+            onClick={() => router.push('/admin')}
+            className="text-xs sm:text-sm text-white font-bold px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 transition-all cursor-pointer shadow-sm"
+          >
+            🔐 Admin Login
+          </button>
+        </nav>
+      </header>
 
       {/* Decorative corner elements */}
       <div className="absolute top-8 left-8 w-24 h-24 border border-cyan-500/20 rounded-lg animate-float" style={{ animationDelay: '0s' }} />
@@ -182,20 +210,48 @@ export default function LandingPage() {
           </button>
         </div>
 
+        {/* Workflows Overview */}
+        <div
+          className={`mt-10 grid grid-cols-1 md:grid-cols-2 gap-4 text-left transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+          style={{ transitionDelay: '550ms' }}
+        >
+          {/* Student Workflow */}
+          <div className="glass-card p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5">
+            <div className="flex items-center gap-2 mb-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
+              <span>🎓</span>
+              <span>Student Examination Workflow</span>
+            </div>
+            <p className="text-gray-300 text-xs leading-relaxed">
+              Open Website → Enter Student Details → Read Instructions → Start Exam (50 Questions) → Submit Exam → View Instant Personal Result Card & Meme Dialogue.
+            </p>
+          </div>
+
+          {/* Admin Workflow */}
+          <div className="glass-card p-4 rounded-xl border border-purple-500/20 bg-purple-500/5">
+            <div className="flex items-center gap-2 mb-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
+              <span>🔐</span>
+              <span>Administrator Workflow</span>
+            </div>
+            <p className="text-gray-300 text-xs leading-relaxed">
+              Open Website → Click Admin Login → Authenticate Credentials → Access Admin Dashboard → Real-Time Analytics, Student Filtering & Excel/CSV Exports.
+            </p>
+          </div>
+        </div>
+
         {/* Info pill */}
         <div
-          className={`mt-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+          className={`mt-6 mb-16 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
           style={{ transitionDelay: '600ms' }}
         >
-          <p className="text-gray-500 text-sm">
-            Please ensure a stable internet connection before starting
+          <p className="text-gray-500 text-xs">
+            ⚡ High-performance engine enabled · Wall-clock precision timer · Multi-device resilience
           </p>
         </div>
       </div>
 
       {/* Footer */}
       <div
-        className={`absolute bottom-0 left-0 right-0 py-6 text-center border-t border-white/5 transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}
+        className={`relative z-10 py-6 text-center border-t border-white/5 transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}
         style={{ transitionDelay: '700ms' }}
       >
         <p className="text-gray-500 text-sm">

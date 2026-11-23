@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/auth';
+import { getMemePerformance } from '@/lib/performance';
+import * as XLSX from 'xlsx';
 
-interface StudentRow {
+export interface StudentRow {
   sno: number;
+  session_id: string;
   student_name: string;
   department: string;
   roll_number: string;
@@ -15,10 +18,27 @@ interface StudentRow {
   marks: number;
   percentage: string;
   status: string;
+  meme_message: string;
   submission_time: string;
 }
 
-async function fetchResults(): Promise<StudentRow[]> {
+export interface DashboardStats {
+  totalRegistered: number;
+  totalSubmissions: number;
+  completedExams: number;
+  avgMarks: string;
+  highestMarks: number;
+  lowestMarks: number;
+}
+
+async function fetchResults(): Promise<{ rows: StudentRow[]; stats: DashboardStats }> {
+  // Fetch registered students count
+  const { data: allStudents } = await supabaseAdmin
+    .from('students')
+    .select('id');
+  const totalRegistered = Array.isArray(allStudents) ? allStudents.length : 0;
+
+  // Fetch submitted exam sessions
   const { data: submissions, error } = await supabaseAdmin
     .from('exam_sessions')
     .select(`
@@ -40,24 +60,18 @@ async function fetchResults(): Promise<StudentRow[]> {
 
   if (error) throw new Error(error.message);
 
-  return (submissions ?? []).map((row: any, idx: number) => {
-    const marks = row.score ?? 0;
+  const rows: StudentRow[] = (submissions ?? []).map((row: any, idx: number) => {
+    const marks = Number(row.score ?? 0);
     const total = 50;
-    const correct = row.correct_count ?? 0;
-    const incorrect = row.incorrect_count ?? 0;
-    const unanswered = row.unanswered_count ?? (total - correct - incorrect);
+    const correct = Number(row.correct_count ?? 0);
+    const incorrect = Number(row.incorrect_count ?? 0);
+    const unanswered = Number(row.unanswered_count ?? (total - correct - incorrect));
     const percentage = ((marks / 50) * 100).toFixed(2) + '%';
-    const status =
-      marks >= 45 ? 'Outstanding' :
-      marks >= 40 ? 'Excellent' :
-      marks >= 35 ? 'Very Good' :
-      marks >= 30 ? 'Good' :
-      marks >= 20 ? 'Average' :
-      marks >= 10 ? 'Below Average' :
-      'Needs Improvement';
+    const meme = getMemePerformance(marks);
 
     return {
       sno: idx + 1,
+      session_id: row.id || '',
       student_name: row.students?.full_name ?? '',
       department: row.students?.department ?? '',
       roll_number: row.students?.roll_number ?? '',
@@ -68,12 +82,34 @@ async function fetchResults(): Promise<StudentRow[]> {
       unanswered,
       marks,
       percentage,
-      status,
+      status: meme.label,
+      meme_message: meme.message,
       submission_time: row.submitted_at
         ? new Date(row.submitted_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
         : '',
     };
   });
+
+  const totalSubmissions = rows.length;
+  const completedExams = rows.length;
+  const marksList = rows.map((r) => r.marks);
+  const avgMarks = marksList.length > 0
+    ? (marksList.reduce((acc, m) => acc + m, 0) / marksList.length).toFixed(1)
+    : '0';
+  const highestMarks = marksList.length > 0 ? Math.max(...marksList) : 0;
+  const lowestMarks = marksList.length > 0 ? Math.min(...marksList) : 0;
+
+  return {
+    rows,
+    stats: {
+      totalRegistered: Math.max(totalRegistered, totalSubmissions),
+      totalSubmissions,
+      completedExams,
+      avgMarks,
+      highestMarks,
+      lowestMarks,
+    },
+  };
 }
 
 function toCSV(rows: StudentRow[]): string {
@@ -89,7 +125,7 @@ function toCSV(rows: StudentRow[]): string {
     'Unanswered',
     'Marks/50',
     'Percentage',
-    'Status',
+    'Performance Category',
     'Submission Time',
   ];
 
@@ -138,7 +174,7 @@ export async function GET(request: NextRequest) {
   const format = searchParams.get('format') ?? 'json';
 
   try {
-    const rows = await fetchResults();
+    const { rows, stats } = await fetchResults();
 
     if (format === 'csv') {
       const csv = toCSV(rows);
@@ -151,8 +187,38 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // json and pdf both return JSON (PDF is generated client-side)
-    return NextResponse.json({ data: rows }, { status: 200 });
+    if (format === 'excel' || format === 'xlsx') {
+      const sheetData = rows.map((r) => ({
+        'S.No': r.sno,
+        'Student Name': r.student_name,
+        'Department': r.department,
+        'Roll Number': r.roll_number,
+        'Email': r.email,
+        'Total Questions': r.total_questions,
+        'Correct': r.correct,
+        'Incorrect': r.incorrect,
+        'Unanswered': r.unanswered,
+        'Marks / 50': r.marks,
+        'Percentage': r.percentage,
+        'Performance Category': r.status,
+        'Submission Time (IST)': r.submission_time,
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(sheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'EduNet Exam Results');
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      return new NextResponse(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': 'attachment; filename="edunet-results.xlsx"',
+        },
+      });
+    }
+
+    return NextResponse.json({ data: rows, stats }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message ?? 'Internal error' }, { status: 500 });
   }

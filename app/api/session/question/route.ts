@@ -22,9 +22,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'index is required.' }, { status: 400 });
     }
 
-    const index = parseInt(indexParam, 10);
-    if (isNaN(index) || index < 0 || index > 49) {
-      return NextResponse.json({ error: 'index must be a number between 0 and 49.' }, { status: 400 });
+    const isAll = indexParam === 'all';
+    const index = isAll ? 0 : parseInt(indexParam, 10);
+    if (!isAll && (isNaN(index) || index < 0 || index > 49)) {
+      return NextResponse.json({ error: 'index must be a number between 0 and 49 or "all".' }, { status: 400 });
     }
 
     // Validate session and get student info
@@ -62,6 +63,57 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Extract student info (Supabase join returns nested object or array)
+    const rawStudent = session.students as unknown;
+    const studentData = (Array.isArray(rawStudent) ? rawStudent[0] : rawStudent) as { full_name: string; roll_number: string } | null;
+
+    // Batch preload all 50 questions without correct answers for 0ms transitions
+    if (isAll) {
+      const { data: questions, error: qErr } = await supabaseAdmin
+        .from('assigned_questions')
+        .select('question_index, question_id, section, topic, question_text, options')
+        .eq('session_id', sessionId)
+        .order('question_index', { ascending: true });
+
+      if (qErr || !questions) {
+        return NextResponse.json({ error: 'Questions not found.' }, { status: 404 });
+      }
+
+      // Fetch any previously saved answers
+      const { data: savedAnswers } = await supabaseAdmin
+        .from('student_answers')
+        .select('question_index, selected_answer')
+        .eq('session_id', sessionId);
+
+      const savedMap: Record<number, string> = {};
+      (savedAnswers || []).forEach((sa: any) => {
+        if (sa.selected_answer) savedMap[sa.question_index] = sa.selected_answer;
+      });
+
+      const list = (questions as any[]).map((q) => ({
+        questionIndex: q.question_index,
+        totalQuestions: 50,
+        section: q.section,
+        sectionName: SECTION_NAMES[q.section] ?? q.section,
+        topic: q.topic,
+        questionId: q.question_id,
+        questionText: q.question_text,
+        options: q.options,
+        savedAnswer: savedMap[q.question_index] ?? null,
+        studentName: studentData?.full_name ?? '',
+        rollNumber: studentData?.roll_number ?? '',
+        currentQuestionIndex: session.current_question_index ?? 0,
+      }));
+
+      return NextResponse.json({
+        totalQuestions: 50,
+        currentQuestionIndex: session.current_question_index ?? 0,
+        studentName: studentData?.full_name ?? '',
+        rollNumber: studentData?.roll_number ?? '',
+        questions: list,
+      });
+    }
+
     // Fetch the question (strip correct_answer)
     const { data: question, error: questionError } = await supabaseAdmin
       .from('assigned_questions')
@@ -86,10 +138,6 @@ export async function GET(request: NextRequest) {
       .eq('session_id', sessionId)
       .eq('question_index', index)
       .maybeSingle();
-
-    // Extract student info (Supabase join returns nested object or array)
-    const rawStudent = session.students as unknown;
-    const studentData = (Array.isArray(rawStudent) ? rawStudent[0] : rawStudent) as { full_name: string; roll_number: string } | null;
 
     return NextResponse.json({
       questionIndex: question.question_index,

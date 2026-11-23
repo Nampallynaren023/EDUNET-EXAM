@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { getMemePerformance } from '@/lib/performance';
 
 interface ResultData {
   studentName: string;
@@ -15,16 +16,6 @@ interface ResultData {
   incorrect: number;
   unanswered: number;
   submittedAt: string;
-}
-
-function getPerformanceDetails(score: number) {
-  if (score >= 45) return { label: 'Outstanding', emoji: '🏆', message: 'Exceptional performance! You are truly exam-ready.', color: '#fbbf24', gradient: 'linear-gradient(135deg, #fbbf24, #f59e0b)' };
-  if (score >= 40) return { label: 'Excellent', emoji: '🌟', message: 'Great work! You have strong professional skills.', color: '#22d3ee', gradient: 'linear-gradient(135deg, #22d3ee, #3b82f6)' };
-  if (score >= 35) return { label: 'Very Good', emoji: '👍', message: "Well done! You're on the right track.", color: '#34d399', gradient: 'linear-gradient(135deg, #34d399, #10b981)' };
-  if (score >= 30) return { label: 'Good', emoji: '😊', message: 'Good effort! Keep building your skills.', color: '#a78bfa', gradient: 'linear-gradient(135deg, #a78bfa, #8b5cf6)' };
-  if (score >= 20) return { label: 'Average', emoji: '📚', message: "You're making progress. Keep practicing!", color: '#60a5fa', gradient: 'linear-gradient(135deg, #60a5fa, #3b82f6)' };
-  if (score >= 10) return { label: 'Below Average', emoji: '💪', message: "Don't give up! Every expert was once a beginner.", color: '#fb923c', gradient: 'linear-gradient(135deg, #fb923c, #f97316)' };
-  return { label: 'Needs Improvement', emoji: '🌱', message: 'This is just the beginning of your journey. Keep going!', color: '#f87171', gradient: 'linear-gradient(135deg, #f87171, #ef4444)' };
 }
 
 export default function CheckResultPage() {
@@ -131,18 +122,33 @@ export default function CheckResultPage() {
 
         {/* Result Card Display */}
         {result && (() => {
-          const perf = getPerformanceDetails(result.score);
+          const perf = getMemePerformance(result.score);
           return (
             <div className="glass-card p-6 md:p-8 border animate-scale-in" style={{ borderColor: `${perf.color}40` }}>
               <div className="text-center mb-6">
-                <div className="text-6xl mb-3 animate-success-bounce">{perf.emoji}</div>
+                {perf.isLegendary && (
+                  <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-xs uppercase tracking-widest shadow-md">
+                    <span>👑</span>
+                    <span>PERFECT SCORE · 50/50</span>
+                    <span>👑</span>
+                  </div>
+                )}
+                <div className="text-6xl mb-2 animate-success-bounce">{perf.emoji}</div>
                 <div className="text-4xl md:text-5xl font-black mb-1" style={{ background: perf.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                   {result.score}/50
                 </div>
-                <div className="text-xl font-bold mb-1" style={{ color: perf.color }}>{perf.label}</div>
-                <div className="text-gray-400 text-sm mb-3">{result.percentage}% Overall Score</div>
-                <div className="text-white text-sm px-4 py-2 rounded-xl inline-block" style={{ background: `${perf.color}15`, border: `1px solid ${perf.color}30` }}>
-                  {perf.message}
+                <div className="mb-2">
+                  <span
+                    className="inline-block px-3.5 py-1 rounded-full text-sm font-black uppercase tracking-wider"
+                    style={{ color: perf.color, background: perf.badgeBg, border: `1.5px solid ${perf.badgeBorder}` }}
+                  >
+                    {perf.label}
+                  </span>
+                </div>
+                <div className="text-gray-300 font-semibold text-sm mb-3">{result.percentage}% Overall Score</div>
+                <div className="text-white text-sm px-4 py-3 rounded-xl inline-block text-left border" style={{ background: 'rgba(255,255,255,0.04)', borderColor: `${perf.color}35` }}>
+                  <span className="text-gray-400 text-xs block font-bold uppercase tracking-wider mb-0.5">Assessment Feedback</span>
+                  <span className="italic font-medium">&ldquo;{perf.message}&rdquo;</span>
                 </div>
               </div>
 
