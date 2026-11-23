@@ -131,6 +131,36 @@ export default function ExamPage() {
     }
   }, [sessionId]);
 
+  // Load cached answers from safe storage on startup
+  useEffect(() => {
+    if (!sessionId) return;
+    const cached = safeStorage.get(`edunet_ans_${sessionId}`);
+    if (cached) {
+      try {
+        allAnswersRef.current = { ...JSON.parse(cached), ...allAnswersRef.current };
+      } catch {}
+    }
+  }, [sessionId]);
+
+  // Keep references and storage updated
+  useEffect(() => {
+    selectedAnswerRef.current = selectedAnswer;
+    if (questionRef.current && selectedAnswer !== null) {
+      const qIdx = questionRef.current.questionIndex;
+      allAnswersRef.current[qIdx] = selectedAnswer;
+      safeStorage.set(`edunet_ans_${sessionId}`, JSON.stringify(allAnswersRef.current));
+      safeStorage.set(`edunet_last_q_${sessionId}`, String(qIdx));
+    }
+  }, [selectedAnswer, sessionId]);
+
+  useEffect(() => {
+    questionRef.current = question;
+  }, [question]);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
   // Network online/offline event listeners
   useEffect(() => {
     const handleOnline = () => {
