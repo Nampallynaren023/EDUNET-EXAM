@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       unanswered: session.unanswered_count ?? (total - (session.correct_count ?? 0) - (session.incorrect_count ?? 0)),
       submittedAt: session.submitted_at,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
   }
 }

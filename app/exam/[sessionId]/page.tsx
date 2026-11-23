@@ -84,80 +84,11 @@ export default function ExamPage() {
   const questionRef = useRef<QuestionData | null>(null);
   const currentIndexRef = useRef(0);
   const allAnswersRef = useRef<Record<number, string | null>>({});
-  const questionEndTimeRef = useRef<number>(Date.now() + QUESTION_TIME * 1000);
+  const questionEndTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef(false);
   const hiddenStartTimeRef = useRef<number | null>(null);
   const pendingAnswerQueue = useRef<Array<{ index: number; answer: string | null }>>([]);
   const questionsCacheRef = useRef<Record<number, QuestionData>>({});
-
-  // Background preload all 50 questions for instant 0ms transitions
-  const preloadAllQuestions = useCallback(async () => {
-    if (!sessionId) return;
-    try {
-      const res = await fetchWithRetry(`/api/session/question?sessionId=${sessionId}&index=all`, {}, 2);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.questions)) {
-          data.questions.forEach((q: QuestionData) => {
-            questionsCacheRef.current[q.questionIndex] = q;
-          });
-        }
-      }
-    } catch {
-      // Non-fatal, single-question fallback remains active
-    }
-  }, [sessionId]);
-
-  // Load cached answers from safe storage on startup
-  useEffect(() => {
-    if (!sessionId) return;
-    const cached = safeStorage.get(`edunet_ans_${sessionId}`);
-    if (cached) {
-      try {
-        allAnswersRef.current = { ...JSON.parse(cached), ...allAnswersRef.current };
-      } catch {}
-    }
-  }, [sessionId]);
-
-  // Keep references updated
-  useEffect(() => {
-    selectedAnswerRef.current = selectedAnswer;
-    if (questionRef.current && selectedAnswer !== null) {
-      const qIdx = questionRef.current.questionIndex;
-      allAnswersRef.current[qIdx] = selectedAnswer;
-      safeStorage.set(`edunet_ans_${sessionId}`, JSON.stringify(allAnswersRef.current));
-      safeStorage.set(`edunet_last_q_${sessionId}`, String(qIdx));
-    }
-  }, [selectedAnswer, sessionId]);
-
-  useEffect(() => {
-    questionRef.current = question;
-  }, [question]);
-
-  useEffect(() => {
-    currentIndexRef.current = currentIndex;
-  }, [currentIndex]);
-
-  // Network online/offline event listeners
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      setReconnecting(false);
-      // Flush any queued offline answers
-      flushAnswerQueue();
-    };
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   // Flush queued offline answers
   const flushAnswerQueue = useCallback(async () => {
@@ -181,6 +112,45 @@ export default function ExamPage() {
       }
     }
   }, [sessionId]);
+
+  // Background preload all 50 questions for instant 0ms transitions
+  const preloadAllQuestions = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetchWithRetry(`/api/session/question?sessionId=${sessionId}&index=all`, {}, 2);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.questions)) {
+          data.questions.forEach((q: QuestionData) => {
+            questionsCacheRef.current[q.questionIndex] = q;
+          });
+        }
+      }
+    } catch {
+      // Non-fatal, single-question fallback remains active
+    }
+  }, [sessionId]);
+
+  // Network online/offline event listeners
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setReconnecting(false);
+      // Flush any queued offline answers
+      flushAnswerQueue();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [flushAnswerQueue]);
 
   // Final Exam Submission (bulletproof with full answer payload)
   const submitExam = useCallback(async () => {

@@ -90,8 +90,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     setMounted(true);
-    const savedToken = localStorage.getItem('edunet_admin_token');
-    const savedName = localStorage.getItem('edunet_admin_name');
+    const savedToken = typeof window !== 'undefined' ? localStorage.getItem('edunet_admin_token') : null;
+    const savedName = typeof window !== 'undefined' ? localStorage.getItem('edunet_admin_name') : null;
     if (savedToken && savedName) {
       setToken(savedToken);
       setAdminName(savedName);

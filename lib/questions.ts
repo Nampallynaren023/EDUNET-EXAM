@@ -1145,14 +1145,12 @@ export function generateExamForStudent(): Question[] {
   ];
 
   const shuffleOptions = (q: Question): Question => {
-    // Preserve the correct answer pointer after shuffling
-    const correctOpt = q.options.find((o) => o.id === q.correctAnswer);
     const shuffled = shuffleArray(q.options);
     const newOptions = shuffled.map((opt, idx) => {
       const newId = ['a', 'b', 'c', 'd'][idx];
       return { id: newId, text: opt.text, originalId: opt.id };
     });
-    const newCorrect = newOptions.find((o: any) => o.originalId === q.correctAnswer)?.id || 'a';
+    const newCorrect = newOptions.find((o) => o.originalId === q.correctAnswer)?.id || 'a';
 
     return {
       ...q,

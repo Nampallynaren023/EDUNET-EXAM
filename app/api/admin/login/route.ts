@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
     const token = signAdminToken({ email: admin.email, name: admin.name });
     return NextResponse.json({ token, name: admin.name, email: admin.email });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
   }
 }

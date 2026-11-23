@@ -119,7 +119,7 @@ function flushDBToDisk() {
       fs.writeFileSync(file, data, 'utf-8');
       if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
     }
-  } catch (e) {
+  } catch {
     // Non-fatal, in-memory cache remains 100% active and consistent
   } finally {
     isSaving = false;
@@ -140,7 +140,7 @@ function saveDB(db: LocalDB) {
 function createMockClient() {
   return {
     from: (tableName: string) => {
-      let filters: Array<(item: any) => boolean> = [];
+      const filters: Array<(item: any) => boolean> = [];
       let orderByField: string | null = null;
       let orderAsc = true;
 
@@ -162,7 +162,7 @@ function createMockClient() {
             return { data: { key: 'exam_enabled', value: val }, error: null };
           }
           const list: any[] = (db as any)[tableName] || [];
-          let filtered = list.filter((item) => filters.every((fn) => fn(item)));
+          const filtered = list.filter((item) => filters.every((fn) => fn(item)));
           if (filtered.length === 0) return { data: null, error: null };
           const row = { ...filtered[0] };
           if (tableName === 'exam_sessions' && row.student_id) {
